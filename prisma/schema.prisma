@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model dead_relics {
+  id                       Int                 @id @default(autoincrement())
+  relic_code               String              @unique @db.VarChar(50)
+  filename                 String              @db.VarChar(150)
+  original_author          String              @db.VarChar(150)
+  abandoned_year           Int
+  source_language          String              @db.VarChar(100)
+  era_category             String              @db.VarChar(100)
+  backstory                String
+  legacy_code              String
+  known_symptoms           String[]
+  expected_soul_invariants Json
+  status                   String?             @default("IN_CRYPT") @db.VarChar(50)
+  created_at               DateTime?           @default(now()) @db.Timestamp(6)
+  reanimated_modules       reanimated_modules?
+
+  @@index([era_category], map: "idx_dead_relics_era")
+  @@index([status], map: "idx_dead_relics_status")
+}
+
+model migration_grimoire {
+  id                       Int                    @id @default(autoincrement())
+  era_category             String                 @db.VarChar(100)
+  deprecated_pattern       String                 @db.VarChar(200)
+  modern_replacement_title String
+  rule_text                String
+  code_example             String
+  embedding                Unsupported("vector")?
+
+  @@index([embedding], map: "idx_migration_grimoire_embedding")
+  @@index([era_category], map: "idx_migration_grimoire_era_category")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reanimated_modules {
+  id                         Int          @id @default(autoincrement())
+  relic_id                   Int?         @unique
+  resurrection_status        String       @db.VarChar(50)
+  soul_preservation_score    Int
+  autopsy_causes_of_death    Json
+  soul_invariants_checklist  Json
+  reanimated_typescript_code String
+  generated_unit_tests       String
+  maintainer_tribute         String
+  updated_at                 DateTime?    @default(now()) @db.Timestamp(6)
+  dead_relics                dead_relics? @relation(fields: [relic_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([resurrection_status], map: "idx_reanimated_modules_status")
+}
