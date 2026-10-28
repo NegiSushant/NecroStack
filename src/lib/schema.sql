@@ -68,3 +68,16 @@ CREATE TABLE reanimated_modules (
 );
 
 CREATE INDEX idx_reanimated_modules_status ON reanimated_modules (resurrection_status);
+
+-- 6. Users: Lead Necromancers & Authenticated Operators
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(50) DEFAULT 'Lead Necromancer',
+    last_sign_in_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);

@@ -27,6 +27,18 @@ model dead_relics {
   @@index([status], map: "idx_dead_relics_status")
 }
 
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  passwordHash String    @map("password_hash")
+  role         String    @default("Lead Necromancer") @db.VarChar(50)
+  lastSignInAt DateTime? @map("last_sign_in_at") @db.Timestamp(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("users")
+}
+
 model migration_grimoire {
   id                       Int                    @id @default(autoincrement())
   era_category             String                 @db.VarChar(100)
@@ -40,7 +52,6 @@ model migration_grimoire {
   @@index([era_category], map: "idx_migration_grimoire_era_category")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model reanimated_modules {
   id                         Int          @id @default(autoincrement())
   relic_id                   Int?         @unique

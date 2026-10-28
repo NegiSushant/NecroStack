@@ -1,4 +1,5 @@
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { pool } from "../src/lib/db";
 import {
   generateLocalEmbedding,
@@ -87,6 +88,19 @@ async function runSeed() {
       );
 
       CREATE INDEX idx_reanimated_modules_status ON reanimated_modules (resurrection_status);
+
+      -- 4. Users table (Lead Necromancers & Authenticated Operators)
+      CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          email VARCHAR(150) UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          role VARCHAR(50) DEFAULT 'Lead Necromancer',
+          last_sign_in_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
     `;
 
     await pool.query(ddl);
@@ -145,7 +159,26 @@ async function runSeed() {
     }
     console.log("");
 
-    // 5. Print Summary Table
+    // 5. Seed Judge / Demo account
+    console.log("🕯️ Step 5: Seeding Hacktoberfest Judge demo account...");
+    const judgePasswordHash = await bcrypt.hash("hacktoberfest2026", 10);
+    await pool.query(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO UPDATE
+       SET password_hash = EXCLUDED.password_hash,
+           name = EXCLUDED.name,
+           role = EXCLUDED.role`,
+      [
+        "Hacktoberfest Judge",
+        "judge@necrostack.dev",
+        judgePasswordHash,
+        "Lead Necromancer",
+      ]
+    );
+    console.log("   ✓ Demo Judge user ready: judge@necrostack.dev\n");
+
+    // 6. Print Summary Table
     console.log("📊 SEED SUMMARY REPORT:");
     console.table([
       {
@@ -167,6 +200,11 @@ async function runSeed() {
         Component: "Crypt Relic Queue",
         Status: "Seeded",
         Details: `${deadRelics.length} relics in IN_CRYPT state`,
+      },
+      {
+        Component: "Demo Judge User",
+        Status: "Seeded",
+        Details: "judge@necrostack.dev (hacktoberfest2026)",
       },
     ]);
 
